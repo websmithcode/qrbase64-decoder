@@ -28,7 +28,7 @@ export default function QRDetector() {
             video: {
                 deviceId: videoDevices[currentDeviceIndex]?.deviceId
                     ? { exact: videoDevices[currentDeviceIndex].deviceId }
-                    : undefined
+                    : undefined,
             }
         };
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -41,7 +41,11 @@ export default function QRDetector() {
     };
 
     const getVideo = async () => {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: "environment",
+            }
+        });
         const videoElement = document.createElement("video");
         videoElement.srcObject = stream;
         videoElement.play();
@@ -106,7 +110,7 @@ export default function QRDetector() {
                     </>
                 ) : (
                     <>
-                        <canvas ref={videoRef} height={videoResolutions[1]} width={videoResolutions[0]} className="w-full transform scale-x-[-1]" />
+                        <canvas ref={videoRef} height={videoResolutions[1]} width={videoResolutions[0]} className="w-full" />
                     </>
                 )}
                 <div className="flex gap-2">
