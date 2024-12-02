@@ -18,19 +18,64 @@ interface ImageData {
 
 export default function Index() {
   const [image, setImage] = useState<string | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLCanvasElement>(null);
   const qrContent = useRef<string | null>(null);
+  const videoElementRef = useRef<HTMLVideoElement | null>(null);
+  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+  const [currentDeviceIndex, setCurrentDeviceIndex] = useState(0);
+  const [videoResolutions, setVideoResolution] = useState<[number, number]>([300, 300]);
+
+
+  const getVideoDevices = async () => {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoDevices = devices.filter(device => device.kind === "videoinput");
+    setVideoDevices(videoDevices);
+  };
+
+  const switchCamera = async () => {
+
+    const constraints = {
+      video: {
+        deviceId: videoDevices[currentDeviceIndex]?.deviceId
+          ? { exact: videoDevices[currentDeviceIndex].deviceId }
+          : undefined
+      }
+    };
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    videoElementRef.current!.srcObject = stream;
+    videoElementRef.current!.play();
+
+    videoElementRef.current!.addEventListener("loadedmetadata", () => {
+      setVideoResolution([videoElementRef.current!.videoWidth, videoElementRef.current!.videoHeight]);
+    });
+  };
 
   const getVideo = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    if (videoRef.current) {
-      videoRef.current.srcObject = stream;
-    }
+    const videoElement = document.createElement("video");
+    videoElement.srcObject = stream;
+    videoElement.play();
+    videoElementRef.current = videoElement;
+
+
+    videoElement.addEventListener("loadedmetadata", () => {
+      setVideoResolution([videoElement.videoWidth, videoElement.videoHeight]);
+      const drawFrame = () => {
+        videoRef.current?.getContext("2d")?.drawImage(videoElement, 0, 0);
+        requestAnimationFrame(drawFrame);
+      };
+      drawFrame();
+    });
   };
 
   useEffect(() => {
+    getVideoDevices();
     getVideo();
   }, []);
+
+  useEffect(() => {
+    switchCamera();
+  }, [currentDeviceIndex]);
 
   const decodeQRCode = (imageData: ImageData) => {
     const code = jsQR(imageData.data, imageData.width, imageData.height);
@@ -43,24 +88,14 @@ export default function Index() {
   };
 
   const takeScreenshot = () => {
-    const video = videoRef.current;
-    if (video) {
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const context = canvas.getContext("2d");
-
-      if (context) {
-        context.save();
-        context.scale(-1, 1);
-        context.drawImage(video, -canvas.width, 0);
-        context.restore();
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-        setImage(canvas.toDataURL("image/png"));
-        decodeQRCode(imageData);
-      } else {
-        console.error("Failed to get canvas context.");
-      }
+    const context = videoRef.current?.getContext("2d");
+    if (context && videoElementRef.current && videoRef.current) {
+      context.drawImage(videoElementRef.current, 0, 0);
+      const imageData = context.getImageData(0, 0, videoRef.current.width, videoRef.current.height);
+      setImage(videoRef.current.toDataURL("image/png"));
+      decodeQRCode(imageData);
+    } else {
+      console.error("Video ref or context is not available.");
     }
   };
 
@@ -76,18 +111,27 @@ export default function Index() {
         {image ? (
           <>
             <img src={image} className="w-full" />
-            <button onClick={resetCamera} className="mt-4 p-2 bg-red-500 text-white rounded">
-              Reset
-            </button>
           </>
         ) : (
           <>
-            <video ref={videoRef} autoPlay className="w-full transform scale-x-[-1]" />
+            <canvas ref={videoRef} height={videoResolutions[1]} width={videoResolutions[0]} className="w-full transform scale-x-[-1]" />
+          </>
+        )}
+        <div className="flex gap-2">
+          {image && (
+            <button onClick={resetCamera} className="mt-4 p-2 bg-red-500 text-white rounded">
+              Reset
+            </button>
+          )}
+          {!image && (
             <button onClick={takeScreenshot} className="mt-4 p-2 bg-blue-500 text-white rounded">
               Shot
             </button>
-          </>
-        )}
+          )}
+          <button onClick={() => setCurrentDeviceIndex((currentDeviceIndex + 1) % videoDevices.length)} className="mt-4 p-2 bg-green-500 text-white rounded">
+            Switch Camera
+          </button>
+        </div>
       </div>
       <div className="md:w-1/2 p-4 border border-gray-300">
         {qrContent.current && <pre>{atob(qrContent.current)}</pre>}
