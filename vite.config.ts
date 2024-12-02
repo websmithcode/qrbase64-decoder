@@ -7,12 +7,13 @@ declare module "@remix-run/node" {
     v3_singleFetch: true;
   }
 }
-const base = process.env.NODE_ENV === 'production' ? "/qrbase64-decoder/" : undefined;
+const base = process.env.NODE_ENV === 'production' ? "/qrbase64-decoder/" : '';
 export default defineConfig({
   base,
   plugins: [
     remix({
       ssr: false,
+      basename: base,
       future: {
         v3_fetcherPersist: true,
         v3_relativeSplatPath: true,
