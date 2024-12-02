@@ -7,12 +7,12 @@ declare module "@remix-run/node" {
     v3_singleFetch: true;
   }
 }
-
+const basename = process.env.NODE_ENV === 'production' ? "https://websmithcode.github.io/qrbase64-decoder/" : undefined;
 export default defineConfig({
   plugins: [
     remix({
       ssr: false,
-
+      basename,
       future: {
         v3_fetcherPersist: true,
         v3_relativeSplatPath: true,
