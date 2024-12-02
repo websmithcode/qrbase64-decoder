@@ -103,7 +103,7 @@ export default function QRDetector() {
                         <canvas ref={canvasRef} height={videoResolutions[1]} width={videoResolutions[0]} className="w-full" />
                     </>
                 )}
-                <div className="flex gap-2 mt-4 justify-center">
+                <div className="flex flex-col gap-2 mt-4 justify-center">
                     <select
                         className="w-full p-2 border border-gray-300 rounded "
                         id="device"
