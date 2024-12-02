@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
 import Webcam from "~/lib/webcam";
+import { copyToClipboard } from "~/lib/helpers";
 
 interface ImageData {
     data: Uint8ClampedArray;
@@ -126,8 +127,11 @@ export default function QRDetector() {
                 </div>
             </div>
             <div className="md:w-1/2 p-4 border border-gray-300 h-full">
-                {qrContent.current && <pre>{atob(qrContent.current)}</pre>}
-                {!qrContent.current && <p>No QR code found</p>}
+                {qrContent.current && <>
+                    <p className="font-mono mb-4">{atob(qrContent.current)}</p>
+                    <button className="p-2 bg-blue-500 text-white rounded w-full" onClick={() => copyToClipboard(atob(qrContent.current ?? ""))}>Copy</button>
+                </>}
+                {!qrContent.current && <p className="font-mono">No QR code found</p>}
             </div>
         </div>
     );

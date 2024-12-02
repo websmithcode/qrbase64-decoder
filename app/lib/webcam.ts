@@ -32,14 +32,13 @@ export default class Webcam extends EventEmitter {
 
     static async getDevices() {
         try {
-            // Запрашиваем доступ к веб-камерам
             await navigator.mediaDevices.getUserMedia({ video: true });
             const devices = await navigator.mediaDevices.enumerateDevices();
             const videoDevices = devices.filter(device => device.kind === "videoinput");
             return videoDevices;
         } catch (error) {
-            console.error("Ошибка доступа к веб-камерам:", error);
-            return []; // Возвращаем пустой массив в случае ошибки
+            console.error("Error accessing webcams:", error);
+            return [];
         }
     }
 
